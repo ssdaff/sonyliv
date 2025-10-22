@@ -1,0 +1,61 @@
+# Workflow-এর নাম
+name: Sync SonyLIV File via External Trigger
+
+# Race Condition ঠেকানোর জন্য
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+# কখন এই Workflow চলবে
+on:
+  # ১. ম্যানুয়ালি চালানোর জন্য
+  workflow_dispatch:
+  
+  # ২. বাইরের সার্ভিস থেকে সিগন্যাল (dispatch) পেলে
+  repository_dispatch:
+    types: [trigger-sync-sonyliv] # <-- SonyLIV-এর জন্য একটি ইউনিক নাম
+
+jobs:
+  sync-json:
+    runs-on: ubuntu-latest
+    
+    # এই job-টি তখনই চলবে যখন dispatch সিগন্যাল পাবে বা ম্যানুয়ালি চালানো হবে
+    if: github.event.action == 'trigger-sync-sonyliv' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      # ধাপ ১: আপনার নিজের রিপোজিটরির কোড চেকআউট করা
+      - name: Checkout Your Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.SYNC_TOKEN }} # <-- এটি পুশ করার জন্য ব্যবহৃত হবে
+          ref: 'main'
+
+      # ধাপ ২: শুধুমাত্র sonyliv.json ফাইলটি ডাউনলোড করে আপডেট করা
+      - name: Download latest sonyliv.json from Upstream
+        run: |
+          curl -o sonyliv.json "https://raw.githubusercontent.com/drmlive/sliv-live-events/main/sonyliv.json"
+
+      # ধাপ ৩: পরিবর্তনগুলো আপনার রিপোজিটরিতে সেভ (Commit) এবং পুশ করা
+      - name: Commit and Push if changed
+        run: |
+          # Git-এর জন্য একটি পরিচয় সেট করা
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # sonyliv.json ফাইলটিকে স্টেজিং-এ যোগ করা
+          git add sonyliv.json
+          
+          # চেক করা হচ্ছে ফাইলটিতে কোনো পরিবর্তন এসেছে কি না
+          if git diff --staged --quiet; then
+            echo "No changes to commit. sonyliv.json is already up-to-date."
+            exit 0 # সফলভাবে প্রস্থান করুন
+          fi
+          
+          # যদি পরিবর্তন থাকে, তাহলে commit করা হবে
+          git commit -m "Auto-update sonyliv.json from upstream"
+          
+          # পুশ করার আগে রিমোটের সাথে rebase করে সিঙ্ক করা
+          git pull origin main --rebase
+          
+          # 'origin main' নির্দিষ্ট করে পুশ করা
+          git push origin main
