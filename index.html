@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Events</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <img src="https://images.slivcdn.com/UI_icons/sonyliv_new_revised_header_logo.png" alt="Logo" class="logo">
+            <h1>Live Events</h1>
+            <div id="live-counter" class="live-count" role="status">Loading...</div>
+        </div>
+    </header>
+
+    <div class="tabs-container">
+        <div class="tab active" data-tab="all">
+            All Events
+            <span id="all-count" class="tab-badge">0</span>
+        </div>
+        <div class="tab" data-tab="live">
+            Live Now
+            <span id="live-count" class="tab-badge">0</span>
+        </div>
+        <div class="tab" data-tab="upcoming">
+            Upcoming
+            <span id="upcoming-count" class="tab-badge">0</span>
+        </div>
+    </div>
+
+    <main id="matches-container">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading Live Events...</p>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
